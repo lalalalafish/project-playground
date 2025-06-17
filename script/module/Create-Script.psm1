@@ -165,9 +165,8 @@ function Invoke-ScriptAction {
         
         [Parameter(Mandatory = $true)]
         [hashtable]$BoundParameters,
-        
-        [Parameter(Mandatory = $true)]
-        [ValidateSet('create', 'open')]
+          [Parameter(Mandatory = $true)]
+        [ValidateSet('create', 'open', 'run')]
         [string]$ScriptAction
     )
       try {
@@ -210,12 +209,21 @@ function Invoke-ScriptAction {
                     Set-Content -Path $filePath -Value $templateContent -Encoding UTF8
                     Format-Message -ms "创建新文件: $filePath"
                 }
-            }
-            elseif ($ScriptAction -eq 'open') {
+            }            elseif ($ScriptAction -eq 'open') {
                 if (-not $fileExists) {
                     Format-Message -mr "文件不存在: $filePath"
                     return
                 }
+            }
+            elseif ($ScriptAction -eq 'run') {
+                if (-not $fileExists) {
+                    Format-Message -mr "文件不存在: $filePath"
+                    return
+                }
+                
+                # 执行文件
+                Invoke-FileExecution -Language $activeLanguage -FilePath $filePath -FileName $FileName
+                return
             }
             
             # 使用 VS Code 打开文件（使用绝对路径）
@@ -235,10 +243,79 @@ function Invoke-ScriptAction {
     }
 }
 
+<#
+.SYNOPSIS
+    执行指定语言的代码文件
+.DESCRIPTION
+    根据语言配置中的执行命令运行代码文件
+.PARAMETER Language
+    编程语言键
+.PARAMETER FilePath
+    文件相对路径
+.PARAMETER FileName
+    原始文件名（用于生成可执行文件名等）
+.EXAMPLE
+    Invoke-FileExecution -Language "js" -FilePath "javascript\hello.js" -FileName "hello"
+#>
+function Invoke-FileExecution {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Language,
+        
+        [Parameter(Mandatory = $true)]
+        [string]$FilePath,
+        
+        [Parameter(Mandatory = $true)]
+        [string]$FileName
+    )
+    
+    try {
+        # 获取语言配置
+        $langConfig = Get-LanguageConfig -Language $Language
+        $executeCommand = $langConfig.execute_command
+        
+        # 获取绝对文件路径
+        $absoluteFilePath = Resolve-Path $FilePath
+        
+        Format-Message -mi "准备执行 $($langConfig.name) 文件: $FilePath"
+        
+        # 处理不同的占位符
+        # {0} = 文件路径, {1} = 作者, {2} = 日期, {3} = 函数名, {4} = 可执行文件名（无扩展名）
+        $formattedFileName = Format-Name -Type $langConfig.filename_type -Name $FileName
+        $executableName = $formattedFileName
+        
+        # 替换执行命令中的占位符
+        $finalCommand = $executeCommand -f $absoluteFilePath, (Get-Author), (Get-Date -Format "yyyy-MM-dd HH:mm:ss"), $formattedFileName, $executableName
+        
+        Format-Message -mi "执行命令: $finalCommand"
+        Format-Message -mm "开始执行"
+          # 执行命令
+        $startTime = Get-Date
+        try {
+            Invoke-Expression $finalCommand
+            $endTime = Get-Date
+            $duration = $endTime - $startTime
+            Format-Message -mm "执行结束"
+            Format-Message -ms "执行完成，耗时: $($duration.TotalSeconds) 秒"
+        }
+        catch {
+            Format-Message -mm "执行结束"
+            Format-Message -mr "执行失败: $($_.Exception.Message)"
+            throw
+        }
+    }
+    catch {
+        Format-Message -mr "执行文件时发生错误: $($_.Exception.Message)"
+        throw
+    }
+}
+
 # 导出函数
 Export-ModuleMember -Function @(
     'New-LanguageDynamicParameters',
     'Get-ActiveLanguage', 
     'Build-FilePath',
-    'Invoke-ScriptAction'
+    'Invoke-ScriptAction',
+    'Invoke-FileExecution'
 )

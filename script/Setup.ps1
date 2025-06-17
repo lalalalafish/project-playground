@@ -53,8 +53,7 @@ function Show-Usage {
     Write-Host "    new -java hello-world    # 创建 Java 文件"
     Write-Host "    new -rust hello-world    # 创建 Rust 文件"
     Write-Host "    new -ps hello-world      # 创建 PowerShell 文件"
-    Write-Host ""
-    Write-ColoredMessage "  打开文件命令:" -Color Yellow
+    Write-Host ""    Write-ColoredMessage "  打开文件命令:" -Color Yellow
     Write-Host "    open hello-world         # 打开默认 TypeScript 文件"
     Write-Host "    open -ts hello-world     # 打开 TypeScript 文件"
     Write-Host "    open -js hello-world     # 打开 JavaScript 文件"
@@ -62,6 +61,15 @@ function Show-Usage {
     Write-Host "    open -java hello-world   # 打开 Java 文件"
     Write-Host "    open -rust hello-world   # 打开 Rust 文件"
     Write-Host "    open -ps hello-world     # 打开 PowerShell 文件"
+    Write-Host ""
+    Write-ColoredMessage "  运行文件命令:" -Color Yellow
+    Write-Host "    run hello-world          # 运行默认 TypeScript 文件"
+    Write-Host "    run -ts hello-world      # 运行 TypeScript 文件"
+    Write-Host "    run -js hello-world      # 运行 JavaScript 文件"
+    Write-Host "    run -py hello-world      # 运行 Python 文件"
+    Write-Host "    run -java hello-world    # 运行 Java 文件"
+    Write-Host "    run -rust hello-world    # 运行 Rust 文件"
+    Write-Host "    run -ps hello-world      # 运行 PowerShell 文件"
     Write-Host ""
 }
 
@@ -100,14 +108,16 @@ function Import-FastCommands {
         Write-ColoredMessage "✅ 快速命令模块导入成功!" -Color Green
         Write-Host "   模块路径: $FastCommandModulePath"
         Write-Host ""
-        
-        # 验证命令是否可用
+          # 验证命令是否可用
         $availableCommands = @()
         if (Get-Command -Name "new" -ErrorAction SilentlyContinue) {
             $availableCommands += "new"
         }
         if (Get-Command -Name "open" -ErrorAction SilentlyContinue) {
             $availableCommands += "open"
+        }
+        if (Get-Command -Name "run" -ErrorAction SilentlyContinue) {
+            $availableCommands += "run"
         }
         
         if ($availableCommands.Count -gt 0) {
@@ -177,7 +187,7 @@ function Main {
         }
         
         Write-Host ""
-        Write-ColoredMessage "🎉 设置完成！现在您可以使用 'new' 和 'open' 快速命令了！" -Color Green
+        Write-ColoredMessage "🎉 设置完成！现在您可以使用 'new', 'open' 和 'run' 快速命令了！" -Color Green
         Write-Host ""
         Write-ColoredMessage "📝 要卸载快速命令，请运行: .\Setup.ps1 -Unload" -Color Gray
     }
