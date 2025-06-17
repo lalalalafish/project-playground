@@ -53,9 +53,19 @@ function new {
         if ($ja) { $scriptParams.ja = $true }
         if ($rs) { $scriptParams.rs = $true }
         if ($ps) { $scriptParams.ps = $true }
+          # 调用原始脚本 - 使用相对于 script 父目录的路径
+        $scriptDir = Split-Path -Parent $PSScriptRoot
+        $projectRoot = Split-Path -Parent $scriptDir
+        $scriptPath = Join-Path $projectRoot "script\New.ps1"
         
-        # 调用原始脚本
-        & "e:\project-playground\script\New.ps1" @scriptParams
+        # 确保在项目根目录下执行
+        Push-Location $projectRoot
+        try {
+            & $scriptPath @scriptParams
+        }
+        finally {
+            Pop-Location
+        }
     }
     catch {
         Write-Error "执行 new 命令失败: $($_.Exception.Message)"
@@ -104,9 +114,19 @@ function open {
         if ($ja) { $scriptParams.ja = $true }
         if ($rs) { $scriptParams.rs = $true }
         if ($ps) { $scriptParams.ps = $true }
+          # 调用原始脚本 - 使用相对于 script 父目录的路径
+        $scriptDir = Split-Path -Parent $PSScriptRoot
+        $projectRoot = Split-Path -Parent $scriptDir
+        $scriptPath = Join-Path $projectRoot "script\Open.ps1"
         
-        # 调用原始脚本
-        & "e:\project-playground\script\Open.ps1" @scriptParams
+        # 确保在项目根目录下执行
+        Push-Location $projectRoot
+        try {
+            & $scriptPath @scriptParams
+        }
+        finally {
+            Pop-Location
+        }
     }
     catch {
         Write-Error "执行 open 命令失败: $($_.Exception.Message)"

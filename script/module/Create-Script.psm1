@@ -124,15 +124,14 @@ function Build-FilePath {
         
         [Parameter(Mandatory = $true)]
         [string]$FileName
-    )
-    try {
+    )    try {
         # 获取语言配置
         $langConfig = Get-LanguageConfig -Language $Language
         
         # 格式化文件名
         $formattedFileName = Format-Name -Type $langConfig.filename_type -Name $FileName
         
-        # 构建完整路径
+        # 构建完整路径 - 以项目根目录为基准
         $fullFileName = "${formattedFileName}$($langConfig.extension)"
         $fullPath = Join-Path $langConfig.name $fullFileName
         
@@ -171,50 +170,64 @@ function Invoke-ScriptAction {
         [ValidateSet('create', 'open')]
         [string]$ScriptAction
     )
-    
-    try {
-        # 获取激活的语言
-        $activeLanguage = Get-ActiveLanguage -BoundParameters $BoundParameters
-        Format-Message -mi "检测到语言: $activeLanguage"
+      try {
+        # 获取项目根目录（script文件夹的父目录）
+        $scriptDir = Split-Path -Parent $PSScriptRoot
+        $projectRoot = Split-Path -Parent $scriptDir
         
-        # 构建文件路径
-        $filePath = Build-FilePath -Language $activeLanguage -FileName $FileName
-        Format-Message -mi "目标文件路径: $filePath"
+        # 确保在项目根目录下执行
+        $originalLocation = Get-Location
+        Set-Location $projectRoot
         
-        # 检查文件是否存在
-        $fileExists = Test-Path $filePath
-        
-        if ($ScriptAction -eq 'create') {
-            if ($fileExists) {
-                Format-Message -mn "文件已存在，直接打开: $filePath"
-            }
-            else {
-                # 创建目录（如果不存在）
-                $directory = Split-Path $filePath -Parent
-                if (-not (Test-Path $directory)) {
-                    New-Item -ItemType Directory -Path $directory -Force | Out-Null
-                    Format-Message -ms "创建目录: $directory"
+        try {
+            # 获取激活的语言
+            $activeLanguage = Get-ActiveLanguage -BoundParameters $BoundParameters
+            Format-Message -mi "检测到语言: $activeLanguage"
+            
+            # 构建文件路径（相对于项目根目录）
+            $filePath = Build-FilePath -Language $activeLanguage -FileName $FileName
+            Format-Message -mi "目标文件路径: $filePath"
+            
+            # 检查文件是否存在
+            $fileExists = Test-Path $filePath
+            
+            if ($ScriptAction -eq 'create') {
+                if ($fileExists) {
+                    Format-Message -mn "文件已存在，直接打开: $filePath"
                 }
-                
-                # 生成模板内容
-                $templateContent = Format-Template -Language $activeLanguage -FileName $FileName
-                
-                # 创建文件并写入模板内容
-                Set-Content -Path $filePath -Value $templateContent -Encoding UTF8
-                Format-Message -ms "创建新文件: $filePath"
+                else {
+                    # 创建目录（如果不存在）
+                    $directory = Split-Path $filePath -Parent
+                    if (-not (Test-Path $directory)) {
+                        New-Item -ItemType Directory -Path $directory -Force | Out-Null
+                        Format-Message -ms "创建目录: $directory"
+                    }
+                    
+                    # 生成模板内容
+                    $templateContent = Format-Template -Language $activeLanguage -FileName $FileName
+                    
+                    # 创建文件并写入模板内容
+                    Set-Content -Path $filePath -Value $templateContent -Encoding UTF8
+                    Format-Message -ms "创建新文件: $filePath"
+                }
             }
-        }
-        elseif ($ScriptAction -eq 'open') {
-            if (-not $fileExists) {
-                Format-Message -mr "文件不存在: $filePath"
-                return
+            elseif ($ScriptAction -eq 'open') {
+                if (-not $fileExists) {
+                    Format-Message -mr "文件不存在: $filePath"
+                    return
+                }
             }
+            
+            # 使用 VS Code 打开文件（使用绝对路径）
+            $absoluteFilePath = Join-Path $projectRoot $filePath
+            Format-Message -mi "正在使用 VS Code 打开文件..."
+            Start-Process -FilePath "code" -ArgumentList $absoluteFilePath -NoNewWindow
+            Format-Message -ms "文件已在 VS Code 中打开"
         }
-        
-        # 使用 VS Code 打开文件
-        Format-Message -mi "正在使用 VS Code 打开文件..."
-        Start-Process -FilePath "code" -ArgumentList $filePath -NoNewWindow
-        Format-Message -ms "文件已在 VS Code 中打开"
+        finally {
+            # 恢复原始工作目录
+            Set-Location $originalLocation
+        }
     }
     catch {
         Format-Message -mr "操作失败: $($_.Exception.Message)"

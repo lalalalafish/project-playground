@@ -57,14 +57,17 @@ function Format-Name {
             $processedName = switch ($Type) {
                 'kebab-case' { 
                     ($words | ForEach-Object { $_.ToLower() }) -join '-'
-                }
-                'camel-case' {
+                }                'camel-case' {
                     $result = @()
-                    for ($i = 0; $i -lt $words.Count; $i++) {
-                        if ($i -eq 0) {
-                            $result += $words[$i].ToLower()
-                        } else {
-                            $result += (Get-Culture).TextInfo.ToTitleCase($words[$i].ToLower())
+                    # 确保 $words 是数组
+                    $wordsArray = @($words)
+                    if ($wordsArray -and $wordsArray.Count -gt 0) {
+                        for ($i = 0; $i -lt $wordsArray.Count; $i++) {
+                            if ($i -eq 0) {
+                                $result += $wordsArray[$i].ToLower()
+                            } else {
+                                $result += (Get-Culture).TextInfo.ToTitleCase($wordsArray[$i].ToLower())
+                            }
                         }
                     }
                     $result -join ''
@@ -131,10 +134,9 @@ function Split-StringToWords {
                 $words += $match.Value
             }
         }
-    }
-    
-    # 过滤空字符串并返回
-    return $words | Where-Object { $_.Length -gt 0 }
+    }      # 过滤空字符串并返回，确保返回数组
+    $result = @($words | Where-Object { $_.Length -gt 0 })
+    return $result
 }
 
 # 导出公共函数

@@ -12,7 +12,7 @@
       "filename_type": "kebab-case",
       "function_name_type": "camel-case",
       "execute_command": "node {0}",
-      "template": "/**\n * @file {0}\n * @description 无\n * @author {1}\n * @since {2}\n */\n\nfunction {3}() {{\n    console.log('Hello, JavaScript!');\n}}\n\n{3}();"
+      "template": "/**\n * @file {0}\n * @description 无\n * @author {1}\n * @since {2}\n */\n\nfunction {3}() {{\n    console.log('Hello, JavaScript!');\n}}\n\n {3}();"
     },    "ja": {
       "name": "java",
       "extension": ".java",
