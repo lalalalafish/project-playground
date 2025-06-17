@@ -290,17 +290,16 @@ function Invoke-FileExecution {
         
         Format-Message -mi "执行命令: $finalCommand"
         Format-Message -mm "开始执行"
-          # 执行命令
+        
+        # 执行命令
         $startTime = Get-Date
         try {
             Invoke-Expression $finalCommand
             $endTime = Get-Date
             $duration = $endTime - $startTime
-            Format-Message -mm "执行结束"
             Format-Message -ms "执行完成，耗时: $($duration.TotalSeconds) 秒"
         }
         catch {
-            Format-Message -mm "执行结束"
             Format-Message -mr "执行失败: $($_.Exception.Message)"
             throw
         }
